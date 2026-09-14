@@ -1,0 +1,23 @@
+# ── Build output ────────────────────────────────────────────────
+target/
+*.class
+*.jar
+
+# ── Local configuration (NEVER commit real credentials) ─────────
+src/main/resources/config.properties
+
+# ── IDE ─────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+# ── OS ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Logs ────────────────────────────────────────────────────────
+*.log

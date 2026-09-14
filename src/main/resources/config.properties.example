@@ -1,0 +1,19 @@
+# StudyFlow — local database configuration
+#
+# HOW TO USE:
+#   1. Copy this file to config.properties (same folder)
+#   2. Fill in your own credentials
+#   3. config.properties is git-ignored, so your password never leaves your machine
+#
+# Every value can also be supplied as an environment variable, which is what
+# CI pipelines and Docker containers will use instead of this file.
+# Environment variables always win over the values below.
+
+# Overridden by env var: STUDYFLOW_DB_URL
+db.url=jdbc:mariadb://localhost:3306/studyflow
+
+# Overridden by env var: STUDYFLOW_DB_USER
+db.user=studyflow
+
+# Overridden by env var: STUDYFLOW_DB_PASSWORD
+db.password=change-me

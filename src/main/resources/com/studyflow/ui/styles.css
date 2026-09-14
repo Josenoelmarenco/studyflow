@@ -1,0 +1,162 @@
+/*
+ * StudyFlow — design tokens and component styles.
+ *
+ * Values mirror the Figma high-fidelity design so the implementation and the
+ * design file stay in sync. Change a colour here, not in Java code.
+ *
+ * Note: JavaFX CSS is a subset of web CSS. There is no flexbox, no grid and no
+ * `rem` unit; layout is done with JavaFX containers (VBox, HBox, BorderPane)
+ * and sizes are in pixels.
+ */
+
+.root {
+    /* ── Colour tokens ─────────────────────────────────────────── */
+    -fx-primary:        #4F46E5;
+    -fx-primary-dark:   #3730A3;
+    -fx-sidebar-bg:     #1E1B4B;
+    -fx-surface:        #FFFFFF;
+    -fx-background:     #F8FAFC;
+    -fx-border:         #E2E8F0;
+    -fx-text:           #0F172A;
+    -fx-text-muted:     #64748B;
+    -fx-text-inverse:   #E0E7FF;
+
+    -fx-success:        #059669;
+    -fx-warning:        #D97706;
+    -fx-danger:         #DC2626;
+
+    -fx-font-family: "Inter", "Helvetica Neue", "Segoe UI", sans-serif;
+    -fx-font-size: 13px;
+}
+
+.app-root {
+    -fx-background-color: -fx-background;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────── */
+
+.sidebar {
+    -fx-background-color: -fx-sidebar-bg;
+}
+
+.brand {
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.brand-subtitle {
+    -fx-text-fill: -fx-text-inverse;
+    -fx-font-size: 11px;
+    -fx-opacity: 0.7;
+}
+
+.nav-heading {
+    -fx-text-fill: -fx-text-inverse;
+    -fx-font-size: 10px;
+    -fx-opacity: 0.5;
+}
+
+.nav-item {
+    -fx-text-fill: -fx-text-inverse;
+    -fx-padding: 10 12 10 12;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.nav-item:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+}
+
+.nav-item-active {
+    -fx-background-color: -fx-primary;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+/* ── Page headings ─────────────────────────────────────────────── */
+
+.content {
+    -fx-background-color: -fx-background;
+}
+
+.page-title {
+    -fx-text-fill: -fx-text;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.page-subtitle {
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 13px;
+}
+
+/* ── Summary cards ─────────────────────────────────────────────── */
+
+.card {
+    -fx-background-color: -fx-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+}
+
+.card-value {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text;
+}
+
+.card-caption {
+    -fx-font-size: 11px;
+    -fx-text-fill: -fx-text-muted;
+}
+
+.card-pending  .card-value { -fx-text-fill: -fx-text-muted; }
+.card-progress .card-value { -fx-text-fill: -fx-primary; }
+.card-overdue  .card-value { -fx-text-fill: -fx-danger; }
+.card-done     .card-value { -fx-text-fill: -fx-success; }
+
+/* ── Task table ────────────────────────────────────────────────── */
+
+.task-table {
+    -fx-background-color: -fx-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+}
+
+.task-table .column-header-background {
+    -fx-background-color: -fx-background;
+    -fx-background-radius: 10 10 0 0;
+}
+
+.task-table .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent -fx-border -fx-border transparent;
+    -fx-padding: 10 8 10 8;
+}
+
+.task-table .column-header .label {
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-alignment: center-left;
+}
+
+.task-table .table-row-cell {
+    -fx-background-color: -fx-surface;
+    -fx-border-color: transparent transparent -fx-border transparent;
+    -fx-cell-size: 40px;
+}
+
+.task-table .table-row-cell:selected {
+    -fx-background-color: #EEF2FF;
+}
+
+.task-table .table-cell {
+    -fx-text-fill: -fx-text;
+    -fx-alignment: center-left;
+    -fx-padding: 8;
+}
