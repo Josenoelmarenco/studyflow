@@ -1,0 +1,14 @@
+flowchart TB
+    UI["ui<br/>JavaFX views & dialogs"]
+    SVC["service<br/>business rules"]
+    DAO["dao<br/>persistence contracts + JDBC"]
+    MODEL["model<br/>domain objects"]
+    CFG["config<br/>ConnectionProvider"]
+    DB[("MariaDB (prod)<br/>H2 (tests)")]
+
+    UI --> SVC
+    SVC --> DAO
+    DAO --> MODEL
+    DAO --> CFG
+    CFG --> DB
+    SVC --> MODEL

@@ -160,3 +160,73 @@
     -fx-alignment: center-left;
     -fx-padding: 8;
 }
+
+/* ── Section titles (page sub-headings above tables/lists) ─────── */
+
+.section-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────── */
+
+.button {
+    -fx-background-color: -fx-surface;
+    -fx-text-fill: -fx-text;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 14 8 14;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-border-color: -fx-primary;
+}
+
+.button:disabled {
+    -fx-opacity: 0.5;
+}
+
+.primary-button {
+    -fx-background-color: -fx-primary;
+    -fx-text-fill: white;
+    -fx-border-color: -fx-primary;
+}
+
+.primary-button:hover {
+    -fx-background-color: -fx-primary-dark;
+    -fx-border-color: -fx-primary-dark;
+}
+
+/* ── Progress page ─────────────────────────────────────────────── */
+
+.progress-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.progress-row {
+    -fx-background-color: -fx-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 14;
+}
+
+.progress-course-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text;
+}
+
+.progress-count {
+    -fx-font-size: 12px;
+    -fx-text-fill: -fx-text-muted;
+}
+
+.progress-bar {
+    -fx-accent: -fx-primary;
+}

@@ -94,6 +94,25 @@ class TaskServiceTest {
     }
 
     @Nested
+    @DisplayName("saveNew")
+    class SaveNew {
+
+        @Test
+        @DisplayName("persists a fully-specified task as-is, keeping its status")
+        void persistsAsIs() {
+            when(taskDao.create(any(Task.class))).thenAnswer(call -> call.getArgument(0));
+
+            Task saved = service.saveNew(
+                    new Task(1, "Already started", "desc", NOW.plusDays(1), TaskStatus.IN_PROGRESS));
+
+            assertAll(
+                    () -> assertEquals(TaskStatus.IN_PROGRESS, saved.getStatus()),
+                    () -> verify(taskDao).create(any(Task.class))
+            );
+        }
+    }
+
+    @Nested
     @DisplayName("findOverdue")
     class FindOverdue {
 

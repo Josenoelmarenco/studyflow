@@ -1,0 +1,18 @@
+sequenceDiagram
+    actor Student
+    participant V as AssignmentsView
+    participant D as TaskFormDialog
+    participant S as TaskService
+    participant DAO as JdbcTaskDao
+    participant DB as MariaDB
+
+    Student->>V: click "Add assignment"
+    V->>D: open form
+    D-->>V: Task (validated)
+    V->>S: saveNew(task)
+    S->>DAO: create(task)
+    DAO->>DB: INSERT INTO tasks ...
+    DB-->>DAO: generated id
+    DAO-->>S: Task (with id)
+    S-->>V: Task
+    V->>V: refresh() table

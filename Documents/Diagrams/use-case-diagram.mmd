@@ -1,0 +1,19 @@
+flowchart LR
+    student(["👤 Student"])
+
+    subgraph StudyFlow
+        direction TB
+        uc1(["Manage courses"])
+        uc2(["Manage assignments"])
+        uc3(["Track deadlines"])
+        uc4(["Schedule reminders"])
+        uc5(["View dashboard"])
+        uc6(["Follow progress"])
+    end
+
+    student --- uc1
+    student --- uc2
+    student --- uc3
+    student --- uc4
+    student --- uc5
+    student --- uc6

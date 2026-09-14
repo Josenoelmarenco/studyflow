@@ -1,0 +1,57 @@
+classDiagram
+    direction LR
+
+    class Course {
+        -int id
+        -int userId
+        -String name
+        -String code
+        -String semester
+        +displayName() String
+    }
+    class Task {
+        -int id
+        -int courseId
+        -String title
+        -LocalDateTime deadline
+        -TaskStatus status
+        +isOverdue(now) boolean
+        +markDone()
+    }
+    class TaskStatus {
+        <<enumeration>>
+        PENDING
+        IN_PROGRESS
+        DONE
+    }
+    class Reminder {
+        -int taskId
+        -LocalDateTime remindAt
+        -boolean sent
+        +isDue(now) boolean
+    }
+
+    class TaskDao {
+        <<interface>>
+        +create(Task) Task
+        +findAll() List~Task~
+        +update(Task) boolean
+        +deleteById(int) boolean
+    }
+    class JdbcTaskDao
+    class ConnectionProvider {
+        <<interface>>
+        +getConnection() Connection
+    }
+    class TaskService {
+        +createTask(...) Task
+        +findOverdue(now) List~Task~
+        +completionRate() double
+    }
+
+    Course "1" --> "many" Task
+    Task --> TaskStatus
+    Task "1" --> "many" Reminder
+    JdbcTaskDao ..|> TaskDao
+    JdbcTaskDao --> ConnectionProvider
+    TaskService --> TaskDao

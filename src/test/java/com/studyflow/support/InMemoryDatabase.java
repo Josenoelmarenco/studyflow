@@ -63,6 +63,26 @@ public final class InMemoryDatabase implements ConnectionProvider, AutoCloseable
     }
 
     /**
+     * Inserts one user and returns its generated id. Useful for tests that need
+     * a valid {@code user_id} to hang a course on.
+     */
+    public int seedUser() {
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+
+            stmt.executeUpdate("""
+                    INSERT INTO users (name, email, password_hash)
+                    VALUES ('Seed User %s', 'seed-%s@studyflow.local', 'hash')
+                    """.formatted(UUID.randomUUID(), UUID.randomUUID()));
+
+            return lastId(stmt, "users");
+
+        } catch (SQLException e) {
+            throw new IllegalStateException("Could not seed a user", e);
+        }
+    }
+
+    /**
      * Inserts the minimum rows a task needs: one user and one course.
      *
      * @return the id of the created course
@@ -81,13 +101,40 @@ public final class InMemoryDatabase implements ConnectionProvider, AutoCloseable
                     VALUES (1, 'Test Course', 'TX00TEST', 'Autumn 2026')
                     """);
 
-            try (var rs = stmt.executeQuery("SELECT MAX(id) FROM courses")) {
-                rs.next();
-                return rs.getInt(1);
-            }
+            return lastId(stmt, "courses");
 
         } catch (SQLException e) {
             throw new IllegalStateException("Could not seed test data", e);
+        }
+    }
+
+    /**
+     * Inserts one task under the given course and returns its generated id.
+     * Useful for tests of subtasks and reminders, which need a parent task.
+     *
+     * @param courseId an existing course id
+     * @return the id of the created task
+     */
+    public int seedTask(int courseId) {
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+
+            stmt.executeUpdate("""
+                    INSERT INTO tasks (course_id, title, status)
+                    VALUES (%d, 'Seed task', 'PENDING')
+                    """.formatted(courseId));
+
+            return lastId(stmt, "tasks");
+
+        } catch (SQLException e) {
+            throw new IllegalStateException("Could not seed a task", e);
+        }
+    }
+
+    private int lastId(Statement stmt, String table) throws SQLException {
+        try (var rs = stmt.executeQuery("SELECT MAX(id) FROM " + table)) {
+            rs.next();
+            return rs.getInt(1);
         }
     }
 

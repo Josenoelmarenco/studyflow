@@ -15,28 +15,55 @@ The application is layered, and each layer only knows about the one directly bel
 
 ```
   ┌─────────────────────────────────────────┐
-  │  ui/          JavaFX views              │  ← asks the service, renders answers
+  │  ui/          JavaFX views & dialogs    │  ← asks the service, renders answers
   ├─────────────────────────────────────────┤
   │  service/     Business rules            │  ← "what is overdue?", "what's upcoming?"
   ├─────────────────────────────────────────┤
-  │  dao/         Persistence (interface)   │  ← CRUD contract
-  │               JdbcTaskDao               │     JDBC implementation
+  │  dao/         Persistence (interfaces)  │  ← CRUD contracts
+  │               Jdbc*Dao                  │     JDBC implementations
   ├─────────────────────────────────────────┤
-  │  model/       Domain objects            │  ← Task, Course, TaskStatus
+  │  model/       Domain objects            │  ← User, Course, Task, Subtask, Reminder
   ├─────────────────────────────────────────┤
   │  config/      ConnectionProvider        │  ← MariaDB in prod, H2 in tests
   └─────────────────────────────────────────┘
 ```
 
+See [`Documents/Diagrams/`](./Documents/Diagrams) for the architecture, class, ER, use-case and sequence diagrams.
+
 ### Why this structure
 
-**Dependency injection is the load-bearing decision.** A DAO that calls a static `getConnection()` can only ever be tested against a real database, which in practice means it never gets tested at all. Here, `JdbcTaskDao` receives a `ConnectionProvider` through its constructor. In production that provider returns a MariaDB connection; in tests it returns an in-memory H2 database loaded with the *same* `db/schema.sql`. One interface, two environments, real coverage.
+**Dependency injection is the load-bearing decision.** A DAO that calls a static `getConnection()` can only ever be tested against a real database, which in practice means it never gets tested at all. Here, every `Jdbc*Dao` receives a `ConnectionProvider` through its constructor. In production that provider returns a MariaDB connection; in tests it returns an in-memory H2 database loaded with the *same* `db/schema.sql`. One interface, two environments, real coverage.
 
 **`TaskStatus` is an enum, not a `String`.** `"Pendng"` becomes a compile error instead of a row that quietly never matches a filter.
 
 **`LocalDateTime`, not `java.sql.Timestamp`.** JDBC types stay in the DAO. The domain model has no idea a database exists.
 
-**Time is injected, never read from the clock.** `isOverdue(now)` takes the reference time as a parameter, so "what happens the day after a deadline" is a test, not a guess.
+**Time is injected, never read from the clock.** `isOverdue(now)` and `isDue(now)` take the reference time as a parameter, so "what happens the day after a deadline" is a test, not a guess.
+
+---
+
+## Domain model
+
+| Entity | Belongs to | Notable rules |
+|--------|-----------|---------------|
+| **User** | — | Single local user; email is validated and unique; password hash never logged. |
+| **Course** | User | Name is required; `displayName()` combines code + name for the UI. |
+| **Task** | Course | Title required; `isOverdue(now)`; status is a `TaskStatus` enum. |
+| **Subtask** | Task | Checklist item; `toggle()`; feeds the completion rate. |
+| **Reminder** | Task | `remindAt` required; `isDue(now)` when pending and past-due. |
+
+The relationships and columns are shown in the ER diagram; the schema itself lives in [`db/schema.sql`](./db/schema.sql).
+
+---
+
+## Features
+
+- **Dashboard** — counters (total, pending, in-progress, overdue, % complete) and a combined overdue + upcoming table.
+- **Courses** — full create / edit / delete.
+- **Assignments** — full create / edit / delete, plus one-click *mark done*.
+- **Schedule** — every dated task in chronological order.
+- **Reminders** — schedule nudges, see which are due, mark them sent.
+- **Progress** — overall and per-course completion bars.
 
 ---
 
@@ -62,29 +89,23 @@ mysql -u root -p studyflow < db/seed.sql   # optional sample data
 cp src/main/resources/config.properties.example src/main/resources/config.properties
 ```
 
-Edit the copy with your own password. `config.properties` is git-ignored, so it never leaves your machine.
-
-Alternatively, set environment variables, which take precedence over the file:
-
-```bash
-export STUDYFLOW_DB_URL="jdbc:mariadb://localhost:3306/studyflow"
-export STUDYFLOW_DB_USER="studyflow"
-export STUDYFLOW_DB_PASSWORD="your-password"
-```
+Edit the copy with your own password. `config.properties` is git-ignored, so it never leaves your machine. Environment variables (`STUDYFLOW_DB_URL`, `STUDYFLOW_DB_USER`, `STUDYFLOW_DB_PASSWORD`) take precedence over the file.
 
 ### 3. Build and run
 
 ```bash
-mvn clean install     # compile + run tests + coverage report
+mvn clean verify      # compile + tests + coverage gate
 mvn javafx:run        # launch the application
 ```
+
+On first launch StudyFlow creates a single local user automatically, so you can go straight to adding courses and assignments.
 
 ---
 
 ## Testing
 
 ```bash
-mvn test              # run all tests, generate coverage
+mvn test              # run all tests, generate the coverage report
 mvn verify            # also enforce the 70% coverage gate
 open target/site/jacoco/index.html
 ```
@@ -93,14 +114,89 @@ open target/site/jacoco/index.html
 
 | Layer | Approach | Needs a database? |
 |-------|----------|-------------------|
-| `model/` | Plain unit tests | No |
+| `model/` | Plain unit tests (validation, `isOverdue`, `isDue`, `toggle`, …) | No |
 | `service/` | Unit tests with a **Mockito** mock DAO | No |
-| `dao/` | Integration tests against **H2** in MariaDB mode | No — in-memory |
+| `dao/` | Integration tests against **H2** in MariaDB mode, real schema | No — in-memory |
 | `ui/` | Excluded from the coverage gate | — |
 
-Nothing in the suite requires MariaDB to be installed, which is what lets the exact same `mvn test` run on a laptop and on a Jenkins agent.
+Nothing in the suite requires MariaDB to be installed, which is what lets the exact same `mvn test` run on a laptop and on a Jenkins agent. The coverage gate in `pom.xml` fails the build below **70% line coverage** on the model, service and DAO layers.
 
-The coverage gate in `pom.xml` fails the build below **70% line coverage** on the model, service and DAO layers. A number nobody enforces is a number nobody improves.
+---
+
+## Diagrams
+
+Rendered images (with their Mermaid sources) are in [`Documents/Diagrams/`](./Documents/Diagrams):
+
+| Diagram | File |
+|---------|------|
+| Architecture / packages | `architecture-diagram.png` |
+| Class diagram | `class-diagram.png` |
+| ER diagram | `er-diagram.png` |
+| Use-case diagram | `use-case-diagram.png` |
+| Sequence — create assignment | `sequence-create-assignment.png` |
+
+---
+
+## CI/CD & Docker
+
+**Jenkins** — the [`Jenkinsfile`](./Jenkinsfile) defines a declarative pipeline that runs on every commit:
+
+```
+Checkout → Build → Test (JUnit) → Coverage gate (JaCoCo) → Package
+```
+
+Test results and the coverage report are published as build artifacts. Because the tests use in-memory H2, the pipeline needs no database.
+
+**Docker** — the [`Dockerfile`](./Dockerfile) is a multi-stage build that compiles, runs the full suite and enforces the coverage gate inside the image, then produces a runtime image:
+
+```bash
+docker build -t studyflow .
+
+# Run against a MariaDB, forwarding the display (Linux):
+docker run --rm \
+  -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -e STUDYFLOW_DB_URL=jdbc:mariadb://host.docker.internal:3306/studyflow \
+  -e STUDYFLOW_DB_USER=studyflow \
+  -e STUDYFLOW_DB_PASSWORD=your-password \
+  studyflow
+```
+
+---
+
+## Project layout
+
+```
+.
+├── README.md
+├── pom.xml
+├── Dockerfile
+├── Jenkinsfile
+├── .gitignore
+├── db/
+│   ├── schema.sql              # portable DDL — used by MariaDB and by H2 tests
+│   ├── init-local.sql          # one-time local database bootstrap
+│   └── seed.sql                # sample data
+├── src/
+│   ├── main/
+│   │   ├── java/com/studyflow/
+│   │   │   ├── Main.java               # JavaFX entry point, wires the layers
+│   │   │   ├── config/                 # ConnectionProvider, DatabaseConfig
+│   │   │   ├── model/                  # User, Course, Task, Subtask, Reminder, TaskStatus
+│   │   │   ├── dao/                    # *Dao interfaces + Jdbc*Dao implementations
+│   │   │   ├── service/                # User/Course/Task/Subtask/Reminder services
+│   │   │   └── ui/                     # MainView shell + views + dialogs
+│   │   └── resources/
+│   │       ├── config.properties.example
+│   │       └── com/studyflow/ui/styles.css
+│   └── test/java/com/studyflow/
+│       ├── model/                      # unit tests
+│       ├── dao/                        # H2 integration tests
+│       ├── service/                    # Mockito unit tests
+│       └── support/InMemoryDatabase.java
+└── Documents/
+    ├── Acceptance_Criteria.md
+    └── Diagrams/                       # architecture, class, ER, use-case, sequence
+```
 
 ---
 
@@ -117,57 +213,24 @@ The coverage gate in `pom.xml` fails the build below **70% line coverage** on th
 | Test DB | H2 (MariaDB mode) | DAO tests with no server to install |
 | Coverage | JaCoCo | Coverage measurement plus an enforced quality gate |
 | CI/CD | Jenkins | Automated build, test and coverage on every commit |
-| Packaging | Docker | Reproducible runtime environment |
-
----
-
-## Project layout
-
-```
-.
-├── README.md
-├── pom.xml
-├── .gitignore
-├── db/
-│   ├── schema.sql              # portable DDL — used by MariaDB and by H2 tests
-│   ├── init-local.sql          # one-time local database bootstrap
-│   └── seed.sql                # sample data
-├── src/
-│   ├── main/
-│   │   ├── java/com/studyflow/
-│   │   │   ├── Main.java               # JavaFX entry point, wires the layers
-│   │   │   ├── config/                 # ConnectionProvider, DatabaseConfig
-│   │   │   ├── model/                  # Task, Course, TaskStatus
-│   │   │   ├── dao/                    # TaskDao + JdbcTaskDao
-│   │   │   ├── service/                # TaskService
-│   │   │   └── ui/                     # DashboardView
-│   │   └── resources/
-│   │       ├── config.properties.example
-│   │       └── com/studyflow/ui/styles.css
-│   └── test/java/com/studyflow/
-│       ├── model/                      # unit tests
-│       ├── dao/                        # H2 integration tests
-│       ├── service/                    # Mockito unit tests
-│       └── support/InMemoryDatabase.java
-└── Documents/
-    └── Diagrams/                       # ER diagram, use case diagram
-```
+| Packaging | Docker | Reproducible build/test environment and runtime image |
 
 ---
 
 ## Roadmap
 
 - [x] Layered architecture with injected dependencies
-- [x] Task model with validation and business rules
-- [x] Full CRUD DAO, tested against H2
-- [x] Service layer with dashboard queries
-- [x] JavaFX dashboard shell
+- [x] Domain model: User, Course, Task, Subtask, Reminder
+- [x] Full CRUD DAOs for every entity, tested against H2
+- [x] Service layer with dashboard, schedule, reminder and progress logic
+- [x] Functional JavaFX UI: dashboard, courses, assignments, schedule, reminders, progress
+- [x] Create / edit / delete dialogs with input validation
 - [x] JaCoCo coverage gate at 70%
-- [ ] Course and Reminder DAOs
-- [ ] Create / edit / delete task dialogs
-- [ ] Schedule and Progress screens
-- [ ] Jenkins pipeline (`Jenkinsfile`)
-- [ ] Docker image (`Dockerfile`)
+- [x] Jenkins pipeline (`Jenkinsfile`)
+- [x] Docker image (`Dockerfile`)
+- [x] Diagrams and acceptance criteria
+- [ ] Subtask checklist panel in the UI (service + DAO already implemented and tested)
+- [ ] Background scheduler that surfaces due reminders as desktop notifications
 
 ---
 

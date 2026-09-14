@@ -45,6 +45,20 @@ public class TaskService {
         return taskDao.create(task);
     }
 
+    /**
+     * Persists a fully-specified new task exactly as given.
+     *
+     * <p>Unlike {@link #createTask}, this makes no assumptions: the caller
+     * chooses the status and may record a task whose deadline is already in the
+     * past (for example, logging an assignment that is late). Field validation is
+     * still enforced by the {@link Task} constructor. Used by the edit/create
+     * form in the UI, where the user picks every field.
+     */
+    public Task saveNew(Task task) {
+        Objects.requireNonNull(task, "task must not be null");
+        return taskDao.create(task);
+    }
+
     public Optional<Task> findById(int id) {
         return taskDao.findById(id);
     }

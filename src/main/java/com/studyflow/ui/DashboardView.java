@@ -1,8 +1,11 @@
 package com.studyflow.ui;
 
+import com.studyflow.model.Course;
 import com.studyflow.model.Task;
 import com.studyflow.model.TaskStatus;
+import com.studyflow.service.CourseService;
 import com.studyflow.service.TaskService;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -11,109 +14,96 @@ import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.beans.property.SimpleStringProperty;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
- * The main screen: a fixed navigation sidebar plus a content panel showing
- * summary counters and the task list.
+ * The home page: summary counters plus a table of the tasks that need attention
+ * soonest (overdue and upcoming).
  *
- * <p>Built in plain Java rather than FXML on purpose — for a layout this size,
- * code is easier to read in a diff and easier to refactor than XML. FXML starts
- * paying off once a designer edits screens in Scene Builder.
- *
- * <p>The view never queries the database: it asks {@link TaskService} and
- * renders the answer. Swapping the data source would leave this class untouched.
+ * <p>The view never queries the database. It asks {@link TaskService} and
+ * {@link CourseService} and renders the answers, so swapping the data source
+ * would leave this class untouched.
  */
-public class DashboardView {
+public class DashboardView implements ContentView {
 
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
-
-    private static final List<String> NAV_ITEMS = List.of(
-            "Dashboard", "Schedule", "Study Plans", "Assignments", "Reminders", "Progress");
+    private static final int UPCOMING_DAYS = 14;
 
     private final TaskService taskService;
-    private final BorderPane root = new BorderPane();
-    private final ObservableList<Task> tasks = FXCollections.observableArrayList();
+    private final CourseService courseService;
 
-    public DashboardView(TaskService taskService) {
+    private final VBox root = new VBox();
+    private final ObservableList<Task> attention = FXCollections.observableArrayList();
+    private final HBox cards = new HBox();
+
+    private Map<Integer, String> courseNames = Map.of();
+
+    public DashboardView(TaskService taskService, CourseService courseService) {
         this.taskService = Objects.requireNonNull(taskService, "taskService must not be null");
+        this.courseService = Objects.requireNonNull(courseService, "courseService must not be null");
 
-        root.getStyleClass().add("app-root");
-        root.setLeft(buildSidebar());
-        root.setCenter(buildContent());
+        Label heading = new Label("Dashboard");
+        heading.getStyleClass().add("page-title");
 
-        refresh();
+        Label subtitle = new Label("What needs your attention this semester");
+        subtitle.getStyleClass().add("page-subtitle");
+
+        Label tableHeading = new Label("Overdue & upcoming");
+        tableHeading.getStyleClass().add("section-title");
+
+        cards.setSpacing(12);
+        VBox.setMargin(cards, new Insets(16, 0, 8, 0));
+
+        root.getChildren().addAll(heading, subtitle, cards, tableHeading, buildTable());
+        root.getStyleClass().add("content");
+        root.setPadding(new Insets(32));
+        root.setSpacing(16);
     }
 
+    @Override
     public Parent getRoot() {
         return root;
     }
 
-    /** Reloads data from the service and updates the table. */
+    @Override
+    public String title() {
+        return "Dashboard";
+    }
+
+    @Override
     public void refresh() {
-        tasks.setAll(taskService.findAll());
-    }
+        courseNames = loadCourseNames();
+        rebuildCards();
 
-    private VBox buildSidebar() {
-        Label brand = new Label("StudyFlow");
-        brand.getStyleClass().add("brand");
-
-        Label semester = new Label("Autumn 2026");
-        semester.getStyleClass().add("brand-subtitle");
-
-        VBox sidebar = new VBox(brand, semester);
-        sidebar.getStyleClass().add("sidebar");
-        sidebar.setPrefWidth(220);
-        sidebar.setPadding(new Insets(24, 16, 24, 16));
-        sidebar.setSpacing(4);
-
-        Label navHeading = new Label("NAVIGATION");
-        navHeading.getStyleClass().add("nav-heading");
-        VBox.setMargin(navHeading, new Insets(32, 0, 8, 0));
-        sidebar.getChildren().add(navHeading);
-
-        for (String item : NAV_ITEMS) {
-            Label navItem = new Label(item);
-            navItem.getStyleClass().add("nav-item");
-            navItem.setMaxWidth(Double.MAX_VALUE);
-            if (item.equals("Dashboard")) {
-                navItem.getStyleClass().add("nav-item-active");
-            }
-            sidebar.getChildren().add(navItem);
-        }
-
-        return sidebar;
-    }
-
-    private VBox buildContent() {
-        Label heading = new Label("Dashboard");
-        heading.getStyleClass().add("page-title");
-
-        Label subtitle = new Label("Overview of your semester");
-        subtitle.getStyleClass().add("page-subtitle");
-
-        VBox content = new VBox(heading, subtitle, buildSummaryCards(), buildTaskTable());
-        content.getStyleClass().add("content");
-        content.setPadding(new Insets(32));
-        content.setSpacing(16);
-
-        return content;
-    }
-
-    private HBox buildSummaryCards() {
         LocalDateTime now = LocalDateTime.now();
+        List<Task> overdue = taskService.findOverdue(now);
+        List<Task> upcoming = taskService.findUpcoming(now, UPCOMING_DAYS);
 
-        HBox cards = new HBox(
+        attention.setAll(overdue);
+        attention.addAll(upcoming);
+    }
+
+    private Map<Integer, String> loadCourseNames() {
+        Map<Integer, String> names = new HashMap<>();
+        for (Course course : courseService.findAll()) {
+            names.put(course.getId(), course.displayName());
+        }
+        return names;
+    }
+
+    private void rebuildCards() {
+        LocalDateTime now = LocalDateTime.now();
+        cards.getChildren().setAll(
                 summaryCard("Total", String.valueOf(taskService.findAll().size()), "card-neutral"),
                 summaryCard("Pending",
                         String.valueOf(taskService.countByStatus(TaskStatus.PENDING)), "card-pending"),
@@ -124,10 +114,6 @@ public class DashboardView {
                 summaryCard("Completed",
                         "%.0f%%".formatted(taskService.completionRate() * 100), "card-done")
         );
-        cards.setSpacing(12);
-        VBox.setMargin(cards, new Insets(16, 0, 8, 0));
-
-        return cards;
     }
 
     private VBox summaryCard(String caption, String value, String styleClass) {
@@ -148,30 +134,36 @@ public class DashboardView {
         return card;
     }
 
-    private TableView<Task> buildTaskTable() {
-        TableView<Task> table = new TableView<>(tasks);
+    private TableView<Task> buildTable() {
+        TableView<Task> table = new TableView<>(attention);
         table.getStyleClass().add("task-table");
-        table.setPlaceholder(new Label("No tasks yet — add one to get started."));
+        table.setPlaceholder(new Label("Nothing overdue or due soon — you're on top of things."));
         VBox.setVgrow(table, Priority.ALWAYS);
 
         TableColumn<Task, String> titleColumn = new TableColumn<>("Task");
         titleColumn.setCellValueFactory(row ->
                 new SimpleStringProperty(row.getValue().getTitle()));
-        titleColumn.setPrefWidth(320);
+        titleColumn.setPrefWidth(300);
+
+        TableColumn<Task, String> courseColumn = new TableColumn<>("Course");
+        courseColumn.setCellValueFactory(row -> new SimpleStringProperty(
+                courseNames.getOrDefault(row.getValue().getCourseId(), "—")));
+        courseColumn.setPrefWidth(220);
 
         TableColumn<Task, String> deadlineColumn = new TableColumn<>("Deadline");
         deadlineColumn.setCellValueFactory(row -> new SimpleStringProperty(
                 row.getValue().getDeadline() == null
                         ? "—"
                         : row.getValue().getDeadline().format(DATE_FORMAT)));
-        deadlineColumn.setPrefWidth(200);
+        deadlineColumn.setPrefWidth(180);
 
         TableColumn<Task, String> statusColumn = new TableColumn<>("Status");
         statusColumn.setCellValueFactory(row ->
                 new SimpleStringProperty(row.getValue().getStatus().label()));
-        statusColumn.setPrefWidth(140);
+        statusColumn.setPrefWidth(120);
 
         table.getColumns().add(titleColumn);
+        table.getColumns().add(courseColumn);
         table.getColumns().add(deadlineColumn);
         table.getColumns().add(statusColumn);
 

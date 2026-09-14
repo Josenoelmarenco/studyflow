@@ -1,0 +1,40 @@
+erDiagram
+    users ||--o{ courses : owns
+    courses ||--o{ tasks : contains
+    tasks ||--o{ subtasks : "broken into"
+    tasks ||--o{ reminders : "nudged by"
+
+    users {
+        int id PK
+        varchar name
+        varchar email UK
+        varchar password_hash
+        timestamp created_at
+    }
+    courses {
+        int id PK
+        int user_id FK
+        varchar name
+        varchar code
+        varchar semester
+    }
+    tasks {
+        int id PK
+        int course_id FK
+        varchar title
+        text description
+        timestamp deadline
+        varchar status
+    }
+    subtasks {
+        int id PK
+        int task_id FK
+        varchar title
+        boolean is_done
+    }
+    reminders {
+        int id PK
+        int task_id FK
+        timestamp remind_at
+        boolean is_sent
+    }
