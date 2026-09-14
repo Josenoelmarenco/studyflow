@@ -137,6 +137,21 @@ Rendered images (with their Mermaid sources) are in [`Documents/Diagrams/`](./Do
 
 ---
 
+## Project documentation
+
+All course process artifacts live under [`Documents/`](./Documents):
+
+| Document | File |
+|----------|------|
+| Product vision (1 page) | [`Product_Vision.md`](./Documents/Product_Vision.md) |
+| Product backlog (user stories) | [`Backlog.md`](./Documents/Backlog.md) |
+| Project plan | [`Project_Plan.md`](./Documents/Project_Plan.md) |
+| Acceptance criteria | [`Acceptance_Criteria.md`](./Documents/Acceptance_Criteria.md) |
+| Sprint reports | [`sprint-reports/`](./Documents/sprint-reports) (Sprint 1–4) |
+| Diagrams | [`Diagrams/`](./Documents/Diagrams) |
+
+---
+
 ## CI/CD & Docker
 
 **Jenkins** — the [`Jenkinsfile`](./Jenkinsfile) defines a declarative pipeline that runs on every commit:
