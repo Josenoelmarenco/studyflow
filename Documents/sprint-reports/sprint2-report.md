@@ -10,13 +10,12 @@ Lay the technical foundation of the application: implement the database and CRUD
 
 ## Tasks and outcomes
 
-| # | Task (from Sprint 2 requirements) | Status | Evidence |
-|---|-----------------------------------|--------|--------|----------|
-| 1 | Implement the database (schema, tables, relationships) + test CRUD | ✅ | [`db/schema.sql`](../../db/schema.sql); DAOs tested against H2 |
-| 2 | Start the user interface (initial views, layout, interactivity) referencing Figma |  ✅ | `src/main/java/com/studyflow/ui/` — dashboard, courses, assignments, schedule, reminders, progress |
-| 3 | Integrate unit testing (JUnit), tests in the repo | ✅ | `src/test/java/com/studyflow/` — model, DAO (H2), service (Mockito) |
-| 4 | Use Maven for build management | ✅ | [`pom.xml`](../../pom.xml) |
-| 5 | Configure code coverage (JaCoCo) + export & publish the HTML report | ✅ generated / ⏳ publish | `target/site/jacoco/index.html` — publish to a public folder (GitHub Pages `/docs`) |
+#	Task (from Sprint 2 requirements)	Status	Evidence
+1	Implement the database (schema, tables, relationships) + test CRUD	✅	db/schema.sql; DAOs tested against H2
+2	Start the user interface (initial views, layout, interactivity) referencing Figma	✅	src/main/java/com/studyflow/ui/ — dashboard, courses, assignments, schedule, reminders, progress
+3	Integrate unit testing (JUnit), tests in the repo	✅	src/test/java/com/studyflow/ — model, DAO (H2), service (Mockito)
+4	Use Maven for build management	✅	pom.xml
+5	Configure code coverage (JaCoCo) + export & publish the HTML report	✅ generated / ⏳ publish	target/site/jacoco/index.html — publish to a public folder (GitHub Pages /docs)
 
 **Coverage result:** all coverage checks pass; the JaCoCo gate is enforced at **70% line coverage** on the model, DAO and service layers (`mvn verify` fails below that).
 
